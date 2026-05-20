@@ -27,7 +27,8 @@ pkcs1 = { path="../formats-pkcs1/pkcs1", default-features = false, features = ["
 pkcs8 = { path="../formats-pkcs8/pkcs8", default-features = false, features = ["alloc"] }
 #signature = { version = ">2.0, <2.3", default-features = false , features = ["alloc", "digest", "rand_core"] }
 signature = { path="../traits-signature/signature", default-features = false , features = ["alloc", "digest", "rand_core"] }
-spki = { version = "0.7.3", default-features = false, features = ["alloc"] }
+#spki = { version = "0.7.3", default-features = false, features = ["alloc"] }
+spki = { path="../formats-spki/spki", default-features = false, features = ["alloc"] }
 zeroize = { version = "1.5", features = ["alloc"] }
 
 # optional dependencies
