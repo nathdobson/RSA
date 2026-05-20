@@ -23,7 +23,8 @@ subtle = { version = "2.1.1", default-features = false }
 digest = { path="../traits-digest/digest", default-features = false, features = ["alloc", "oid"] }
 #pkcs1 = { version = "0.7.5", default-features = false, features = ["alloc", "pkcs8"] }
 pkcs1 = { path="../formats-pkcs1/pkcs1", default-features = false, features = ["alloc", "pkcs8"] }
-pkcs8 = { version = "0.10.2", default-features = false, features = ["alloc"] }
+#pkcs8 = { version = "0.10.2", default-features = false, features = ["alloc"] }
+pkcs8 = { path="../formats-pkcs8/pkcs8", default-features = false, features = ["alloc"] }
 #signature = { version = ">2.0, <2.3", default-features = false , features = ["alloc", "digest", "rand_core"] }
 signature = { path="../traits-signature/signature", default-features = false , features = ["alloc", "digest", "rand_core"] }
 spki = { version = "0.7.3", default-features = false, features = ["alloc"] }
