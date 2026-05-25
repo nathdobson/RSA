@@ -6,7 +6,7 @@ use num_bigint::{BigUint, RandPrime};
 use num_traits::Float;
 use num_traits::Zero;
 use rand_core::CryptoRngCore;
-
+use fallible_vec::try_vec;
 use crate::{
     algorithms::rsa::{compute_modulus, compute_private_exponent_euler_totient},
     errors::{Error, Result},
@@ -56,7 +56,7 @@ pub(crate) fn generate_multi_prime_key_with_exp<R: CryptoRngCore + ?Sized>(
         }
     }
 
-    let mut primes = vec![BigUint::zero(); nprimes];
+    let mut primes = try_vec![BigUint::zero(); nprimes].expect("TODO");
     let n_final: BigUint;
     let d_final: BigUint;
 

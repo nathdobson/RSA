@@ -10,7 +10,7 @@ use crate::{
 use core::convert::{TryFrom, TryInto};
 use pkcs8::{der::Encode, Document, EncodePrivateKey, EncodePublicKey, SecretDocument};
 use zeroize::Zeroizing;
-
+use fallible_vec::try_vec;
 /// Verify that the `AlgorithmIdentifier` for a key is correct.
 fn verify_algorithm_id(algorithm: &pkcs8::AlgorithmIdentifierRef) -> pkcs8::spki::Result<()> {
     algorithm.assert_algorithm_oid(pkcs1::ALGORITHM_OID)?;
@@ -40,7 +40,7 @@ impl TryFrom<pkcs8::PrivateKeyInfo<'_>> for RsaPrivateKey {
         let d = BigUint::from_bytes_be(pkcs1_key.private_exponent.as_bytes());
         let prime1 = BigUint::from_bytes_be(pkcs1_key.prime1.as_bytes());
         let prime2 = BigUint::from_bytes_be(pkcs1_key.prime2.as_bytes());
-        let primes = vec![prime1, prime2];
+        let primes = try_vec![prime1, prime2].expect("TODO");
         RsaPrivateKey::from_components(n, e, d, primes).map_err(|_| pkcs8::Error::KeyMalformed)
     }
 }

@@ -12,7 +12,7 @@
 use alloc::vec::Vec;
 use digest::{Digest, DynDigest, FixedOutputReset};
 use subtle::{Choice, ConstantTimeEq};
-
+use fallible_vec::try_vec;
 use super::mgf::{mgf1_xor, mgf1_xor_digest};
 use crate::errors::{Error, Result};
 
@@ -42,7 +42,7 @@ pub(crate) fn emsa_pss_encode(
         return Err(Error::Internal);
     }
 
-    let mut em = vec![0; em_len];
+    let mut em = try_vec![0; em_len].expect("TODO");
 
     let (db, h) = em.split_at_mut(em_len - h_len - 1);
     let h = &mut h[..(em_len - 1) - db.len()];
@@ -117,7 +117,7 @@ where
         return Err(Error::Internal);
     }
 
-    let mut em = vec![0; em_len];
+    let mut em = try_vec![0; em_len].expect("TODO");
 
     let (db, h) = em.split_at_mut(em_len - h_len - 1);
     let h = &mut h[..(em_len - 1) - db.len()];

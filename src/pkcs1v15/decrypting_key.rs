@@ -5,15 +5,24 @@ use crate::{
     Result, RsaPrivateKey,
 };
 use alloc::vec::Vec;
+use fallible_vec::{TryClone, TryCloneError};
 use rand_core::CryptoRngCore;
 use zeroize::ZeroizeOnDrop;
 
 /// Decryption key for PKCS#1 v1.5 decryption as described in [RFC8017 § 7.2].
 ///
 /// [RFC8017 § 7.2]: https://datatracker.ietf.org/doc/html/rfc8017#section-7.2
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DecryptingKey {
     inner: RsaPrivateKey,
+}
+
+impl TryClone for DecryptingKey {
+    fn try_clone(&self) -> core::result::Result<Self, TryCloneError> {
+        Ok(DecryptingKey {
+            inner: self.inner.try_clone()?,
+        })
+    }
 }
 
 impl DecryptingKey {
@@ -43,7 +52,7 @@ impl EncryptingKeypair for DecryptingKey {
     type EncryptingKey = EncryptingKey;
     fn encrypting_key(&self) -> EncryptingKey {
         EncryptingKey {
-            inner: self.inner.clone().into(),
+            inner: self.inner.try_clone().expect("TODO").into(),
         }
     }
 }

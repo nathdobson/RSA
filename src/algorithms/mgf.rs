@@ -1,6 +1,7 @@
 //! Mask generation function common to both PSS and OAEP padding
 
 use digest::{Digest, DynDigest, FixedOutputReset};
+use fallible_vec::try_vec;
 
 /// Mask generation function.
 ///
@@ -13,7 +14,7 @@ pub(crate) fn mgf1_xor(out: &mut [u8], digest: &mut dyn DynDigest, seed: &[u8]) 
     assert!(out.len() as u64 <= MAX_LEN);
 
     while i < out.len() {
-        let mut digest_input = vec![0u8; seed.len() + 4];
+        let mut digest_input = try_vec![0u8; seed.len() + 4].expect("TODO");
         digest_input[0..seed.len()].copy_from_slice(seed);
         digest_input[seed.len()..].copy_from_slice(&counter);
 

@@ -10,6 +10,7 @@ use zeroize::{Zeroize, Zeroizing};
 
 use crate::errors::{Error, Result};
 use crate::traits::{PrivateKeyParts, PublicKeyParts};
+use fallible_vec::TryCollect;
 
 /// ⚠️ Raw RSA encryption of m with the public key. No padding is performed.
 ///
@@ -76,7 +77,8 @@ pub fn rsa_decrypt<R: CryptoRngCore + ?Sized>(
                 .iter()
                 .map(ToBigInt::to_bigint)
                 .map(Option::unwrap)
-                .collect();
+                .try_collect()
+                .expect("TODO");
 
             while m.is_negative() {
                 m += &primes[0];

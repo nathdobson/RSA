@@ -3,6 +3,7 @@ use crate::{Result, RsaPrivateKey};
 use const_oid::AssociatedOid;
 use core::marker::PhantomData;
 use digest::{Digest, FixedOutputReset};
+use fallible_vec::{TryClone, TryCloneError};
 use pkcs8::{
     spki::{
         der::AnyRef, AlgorithmIdentifierOwned, AlgorithmIdentifierRef,
@@ -18,7 +19,7 @@ use zeroize::ZeroizeOnDrop;
 
 /// Signing key for producing "blinded" RSASSA-PSS signatures as described in
 /// [draft-irtf-cfrg-rsa-blind-signatures](https://datatracker.ietf.org/doc/draft-irtf-cfrg-rsa-blind-signatures/).
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BlindedSigningKey<D>
 where
     D: Digest,
@@ -26,6 +27,19 @@ where
     inner: RsaPrivateKey,
     salt_len: usize,
     phantom: PhantomData<D>,
+}
+
+impl<D> TryClone for BlindedSigningKey<D>
+where
+    D: Digest,
+{
+    fn try_clone(&self) -> core::result::Result<Self, TryCloneError> {
+        Ok(BlindedSigningKey {
+            inner: self.inner.try_clone()?,
+            salt_len: self.salt_len,
+            phantom: PhantomData,
+        })
+    }
 }
 
 impl<D> BlindedSigningKey<D>

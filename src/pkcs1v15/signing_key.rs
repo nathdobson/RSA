@@ -3,6 +3,7 @@ use crate::{dummy_rng::DummyRng, Result, RsaPrivateKey};
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 use digest::Digest;
+use fallible_vec::{TryClone, TryCloneError};
 use pkcs8::{
     spki::{
         der::AnyRef, AlgorithmIdentifierRef, AssociatedAlgorithmIdentifier,
@@ -19,7 +20,7 @@ use zeroize::ZeroizeOnDrop;
 /// Signing key for `RSASSA-PKCS1-v1_5` signatures as described in [RFC8017 § 8.2].
 ///
 /// [RFC8017 § 8.2]: https://datatracker.ietf.org/doc/html/rfc8017#section-8.2
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct SigningKey<D>
 where
     D: Digest,
@@ -27,6 +28,19 @@ where
     inner: RsaPrivateKey,
     prefix: Vec<u8>,
     phantom: PhantomData<D>,
+}
+
+impl<D> TryClone for SigningKey<D>
+where
+    D: Digest,
+{
+    fn try_clone(&self) -> core::result::Result<Self, TryCloneError> {
+        Ok(SigningKey {
+            inner: self.inner.try_clone()?,
+            prefix: self.prefix.try_clone()?,
+            phantom: PhantomData,
+        })
+    }
 }
 
 impl<D> SigningKey<D>
@@ -222,7 +236,7 @@ where
     fn verifying_key(&self) -> Self::VerifyingKey {
         VerifyingKey {
             inner: self.inner.to_public_key(),
-            prefix: self.prefix.clone(),
+            prefix: self.prefix.try_clone().expect("TODO"),
             phantom: Default::default(),
         }
     }

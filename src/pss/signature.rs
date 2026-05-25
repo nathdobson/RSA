@@ -5,8 +5,9 @@ use spki::{
 };
 
 use crate::algorithms::pad::uint_to_be_pad;
-use alloc::{boxed::Box, string::ToString};
+use alloc::boxed::Box;
 use core::fmt::{Debug, Display, Formatter, LowerHex, UpperHex};
+use fallible_vec::{FallibleVec, TryClone, TryCloneError};
 use num_bigint::BigUint;
 
 /// RSASSA-PSS signatures as described in [RFC8017 § 8.1].
@@ -20,6 +21,15 @@ pub struct Signature {
 
 impl SignatureEncoding for Signature {
     type Repr = Box<[u8]>;
+}
+
+impl TryClone for Signature {
+    fn try_clone(&self) -> Result<Self, TryCloneError> {
+        Ok(Signature {
+            inner: self.inner.clone(),
+            len: self.len,
+        })
+    }
 }
 
 impl SignatureBitStringEncoding for Signature {
@@ -43,14 +53,15 @@ impl From<Signature> for Box<[u8]> {
     fn from(signature: Signature) -> Box<[u8]> {
         uint_to_be_pad(signature.inner, signature.len)
             .expect("RSASSA-PKCS1-v1_5 length invariants should've been enforced")
-            .into_boxed_slice()
+            .try_into_boxed_slice()
+            .expect("TODO")
     }
 }
 
 impl Debug for Signature {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> core::result::Result<(), core::fmt::Error> {
         fmt.debug_tuple("Signature")
-            .field(&self.to_string())
+            .field_with(|f| Display::fmt(self, f))
             .finish()
     }
 }

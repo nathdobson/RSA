@@ -3,6 +3,7 @@ use crate::RsaPublicKey;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 use digest::Digest;
+use fallible_vec::TryClone;
 use pkcs8::{
     spki::{
         der::AnyRef, AlgorithmIdentifierRef, AssociatedAlgorithmIdentifier,
@@ -106,7 +107,7 @@ where
     fn verify(&self, msg: &[u8], signature: &Signature) -> signature::Result<()> {
         verify(
             &self.inner,
-            &self.prefix.clone(),
+            &self.prefix.try_clone().expect("TODO"),
             &D::digest(msg),
             &signature.inner,
             signature.len,
@@ -145,7 +146,7 @@ where
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
-            prefix: self.prefix.clone(),
+            prefix: self.prefix.try_clone().expect("TODO"),
             phantom: Default::default(),
         }
     }

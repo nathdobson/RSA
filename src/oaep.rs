@@ -10,11 +10,12 @@ mod encrypting_key;
 pub use self::{decrypting_key::DecryptingKey, encrypting_key::EncryptingKey};
 
 use alloc::boxed::Box;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
 
 use digest::{Digest, DynDigest, FixedOutputReset};
+use fallible_vec::StrExt;
 use num_bigint::BigUint;
 use rand_core::CryptoRngCore;
 use zeroize::Zeroizing;
@@ -68,8 +69,8 @@ impl Oaep {
     /// ```
     pub fn new<T: 'static + Digest + DynDigest + Send + Sync>() -> Self {
         Self {
-            digest: Box::new(T::new()),
-            mgf_digest: Box::new(T::new()),
+            digest: Box::try_new(T::new()).expect("TODO"),
+            mgf_digest: Box::try_new(T::new()).expect("TODO"),
             label: None,
         }
     }
@@ -79,9 +80,9 @@ impl Oaep {
         label: S,
     ) -> Self {
         Self {
-            digest: Box::new(T::new()),
-            mgf_digest: Box::new(T::new()),
-            label: Some(label.as_ref().to_string()),
+            digest: Box::try_new(T::new()).expect("TODO"),
+            mgf_digest: Box::try_new(T::new()).expect("TODO"),
+            label: Some(label.as_ref().try_to_string().expect("TODO")),
         }
     }
 
@@ -108,8 +109,8 @@ impl Oaep {
         U: 'static + Digest + DynDigest + Send + Sync,
     >() -> Self {
         Self {
-            digest: Box::new(T::new()),
-            mgf_digest: Box::new(U::new()),
+            digest: Box::try_new(T::new()).expect("TODO"),
+            mgf_digest: Box::try_new(U::new()).expect("TODO"),
             label: None,
         }
     }
@@ -123,9 +124,9 @@ impl Oaep {
         label: S,
     ) -> Self {
         Self {
-            digest: Box::new(T::new()),
-            mgf_digest: Box::new(U::new()),
-            label: Some(label.as_ref().to_string()),
+            digest: Box::try_new(T::new()).expect("TODO"),
+            mgf_digest: Box::try_new(U::new()).expect("TODO"),
+            label: Some(label.as_ref().try_to_string().expect("TODO")),
         }
     }
 }

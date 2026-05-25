@@ -20,6 +20,7 @@ use crate::dummy_rng::DummyRng;
 use crate::errors::{Error, Result};
 use crate::traits::{PaddingScheme, PrivateKeyParts, PublicKeyParts, SignatureScheme};
 use crate::CrtValue;
+use fallible_vec::{try_vec, FallibleVec, TryClone, TryCloneError};
 
 /// Represents the public part of an RSA key.
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -35,7 +36,7 @@ pub struct RsaPublicKey {
 }
 
 /// Represents a whole RSA key, public and private parts.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RsaPrivateKey {
     /// Public components of the private key.
@@ -47,6 +48,17 @@ pub struct RsaPrivateKey {
     /// precomputed values to speed up private operations
     #[cfg_attr(feature = "serde", serde(skip))]
     pub(crate) precomputed: Option<PrecomputedValues>,
+}
+
+impl TryClone for RsaPrivateKey {
+    fn try_clone(&self) -> core::result::Result<Self, TryCloneError> {
+        Ok(RsaPrivateKey {
+            pubkey_components: self.pubkey_components.clone(),
+            d: self.d.clone(),
+            primes: self.primes.try_clone()?,
+            precomputed: self.precomputed.try_clone()?,
+        })
+    }
 }
 
 impl Eq for RsaPrivateKey {}
@@ -83,7 +95,7 @@ impl Drop for RsaPrivateKey {
 
 impl ZeroizeOnDrop for RsaPrivateKey {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) struct PrecomputedValues {
     /// D mod (P-1)
     pub(crate) dp: BigUint,
@@ -97,6 +109,17 @@ pub(crate) struct PrecomputedValues {
     /// differently in PKCS#1 and interoperability is sufficiently
     /// important that we mirror this.
     pub(crate) crt_values: Vec<CrtValue>,
+}
+
+impl TryClone for PrecomputedValues {
+    fn try_clone(&self) -> core::result::Result<Self, TryCloneError> {
+        Ok(PrecomputedValues {
+            dp: self.dp.try_clone()?,
+            dq: self.dq.try_clone()?,
+            qinv: self.qinv.clone(),
+            crt_values: self.crt_values.try_clone()?,
+        })
+    }
 }
 
 impl Zeroize for PrecomputedValues {
@@ -258,8 +281,8 @@ impl RsaPrivateKey {
             // Recover `p` and `q` from `d`.
             // See method in Appendix C.2: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-56Br2.pdf
             let (p, q) = recover_primes(&n, &e, &d)?;
-            primes.push(p);
-            primes.push(q);
+            primes.try_push(p).expect("TODO");
+            primes.try_push(q).expect("TODO");
         }
 
         let mut k = RsaPrivateKey {
@@ -292,7 +315,7 @@ impl RsaPrivateKey {
         let n = compute_modulus(&[p.clone(), q.clone()]);
         let d = compute_private_exponent_carmicheal(&p, &q, &public_exponent)?;
 
-        Self::from_components(n, public_exponent, d, vec![p, q])
+        Self::from_components(n, public_exponent, d, try_vec![p, q].expect("TODO"))
     }
 
     /// Constructs an RSA key pair from its primes.
@@ -341,7 +364,7 @@ impl RsaPrivateKey {
 
         let mut r: BigUint = &self.primes[0] * &self.primes[1];
         let crt_values: Vec<CrtValue> = {
-            let mut values = Vec::with_capacity(self.primes.len() - 2);
+            let mut values = Vec::try_with_capacity(self.primes.len() - 2).expect("TODO");
             for prime in &self.primes[2..] {
                 let res = CrtValue {
                     exp: BigInt::from_biguint(Plus, &self.d % (prime - BigUint::one())),
@@ -357,7 +380,7 @@ impl RsaPrivateKey {
                 };
                 r *= prime;
 
-                values.push(res);
+                values.try_push(res).expect("TODO");
             }
             values
         };

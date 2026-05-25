@@ -12,7 +12,7 @@ use pkcs8::AssociatedOid;
 use rand_core::CryptoRngCore;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
 use zeroize::Zeroizing;
-
+use fallible_vec::{try_vec, FallibleVec, SliceExt};
 use crate::errors::{Error, Result};
 
 /// Fills the provided slice with random values, which are guaranteed
@@ -46,7 +46,7 @@ where
     }
 
     // EM = 0x00 || 0x02 || PS || 0x00 || M
-    let mut em = Zeroizing::new(vec![0u8; k]);
+    let mut em = Zeroizing::new(try_vec![0u8; k].expect("TODO"));
     em[1] = 2;
     non_zero_random_bytes(rng, &mut em[2..k - msg.len() - 1]);
     em[k - msg.len() - 1] = 0;
@@ -68,7 +68,7 @@ pub(crate) fn pkcs1v15_encrypt_unpad(em: Vec<u8>, k: usize) -> Result<Vec<u8>> {
         return Err(Error::Decryption);
     }
 
-    Ok(out[index as usize..].to_vec())
+    Ok(out[index as usize..].try_to_vec().expect("TODO"))
 }
 
 /// Removes the PKCS1v15 padding It returns one or zero in valid that indicates whether the
@@ -121,7 +121,7 @@ pub(crate) fn pkcs1v15_sign_pad(prefix: &[u8], hashed: &[u8], k: usize) -> Resul
     }
 
     // EM = 0x00 || 0x01 || PS || 0x00 || T
-    let mut em = vec![0xff; k];
+    let mut em = try_vec![0xff; k].expect("TODO");
     em[0] = 0;
     em[1] = 1;
     em[k - t_len - 1] = 0;
@@ -166,16 +166,16 @@ where
     let oid = D::OID.as_bytes();
     let oid_len = oid.len() as u8;
     let digest_len = <D as Digest>::output_size() as u8;
-    let mut v = vec![
+    let mut v = try_vec![
         0x30,
         oid_len + 8 + digest_len,
         0x30,
         oid_len + 4,
         0x6,
         oid_len,
-    ];
-    v.extend_from_slice(oid);
-    v.extend_from_slice(&[0x05, 0x00, 0x04, digest_len]);
+    ].expect("TODO");
+    v.try_extend_from_slice(oid).expect("TODO");
+    v.try_extend_from_slice(&[0x05, 0x00, 0x04, digest_len]).expect("TODO");
     v
 }
 

@@ -1,5 +1,6 @@
 //! Traits related to the key components
 
+use fallible_vec::{TryClone, TryCloneError};
 use num_bigint::{BigInt, BigUint};
 use zeroize::Zeroize;
 
@@ -40,7 +41,7 @@ pub trait PrivateKeyParts: PublicKeyParts {
 }
 
 /// Contains the precomputed Chinese remainder theorem values.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct CrtValue {
     /// D mod (prime - 1)
     pub(crate) exp: BigInt,
@@ -48,6 +49,16 @@ pub struct CrtValue {
     pub(crate) coeff: BigInt,
     /// product of primes prior to this (inc p and q)
     pub(crate) r: BigInt,
+}
+
+impl TryClone for CrtValue {
+    fn try_clone(&self) -> Result<Self, TryCloneError> {
+        Ok(CrtValue {
+            exp: self.exp.try_clone()?,
+            coeff: self.coeff.try_clone()?,
+            r: self.r.try_clone()?,
+        })
+    }
 }
 
 impl Zeroize for CrtValue {

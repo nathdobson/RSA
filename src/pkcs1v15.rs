@@ -20,6 +20,7 @@ pub use self::{
 use alloc::{boxed::Box, vec::Vec};
 use core::fmt::Debug;
 use digest::Digest;
+use fallible_vec::{FallibleVec, TryClone, TryCloneError};
 use num_bigint::BigUint;
 use pkcs8::AssociatedOid;
 use rand_core::CryptoRngCore;
@@ -57,13 +58,22 @@ impl PaddingScheme for Pkcs1v15Encrypt {
 }
 
 /// `RSASSA-PKCS1-v1_5`: digital signatures using PKCS#1 v1.5 padding.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Pkcs1v15Sign {
     /// Length of hash to use.
     pub hash_len: Option<usize>,
 
     /// Prefix.
     pub prefix: Box<[u8]>,
+}
+
+impl TryClone for Pkcs1v15Sign {
+    fn try_clone(&self) -> core::result::Result<Self, TryCloneError> {
+        Ok(Pkcs1v15Sign {
+            hash_len: self.hash_len,
+            prefix: self.prefix.try_clone()?,
+        })
+    }
 }
 
 impl Pkcs1v15Sign {
@@ -77,7 +87,9 @@ impl Pkcs1v15Sign {
     {
         Self {
             hash_len: Some(<D as Digest>::output_size()),
-            prefix: pkcs1v15_generate_prefix::<D>().into_boxed_slice(),
+            prefix: pkcs1v15_generate_prefix::<D>()
+                .try_into_boxed_slice()
+                .expect("TODO"),
         }
     }
 
@@ -87,7 +99,7 @@ impl Pkcs1v15Sign {
     pub fn new_unprefixed() -> Self {
         Self {
             hash_len: None,
-            prefix: Box::new([]),
+            prefix: Box::try_new([]).expect("TODO"),
         }
     }
 

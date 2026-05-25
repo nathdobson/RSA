@@ -4,19 +4,17 @@ use crate::{
     traits::{Decryptor, RandomizedDecryptor},
     Result, RsaPrivateKey,
 };
-use alloc::{
-    string::{String, ToString},
-    vec::Vec,
-};
+use alloc::{string::String, vec::Vec};
 use core::marker::PhantomData;
 use digest::{Digest, FixedOutputReset};
+use fallible_vec::{StrExt, TryClone};
 use rand_core::CryptoRngCore;
 use zeroize::ZeroizeOnDrop;
 
 /// Decryption key for PKCS#1 v1.5 decryption as described in [RFC8017 § 7.1].
 ///
 /// [RFC8017 § 7.1]: https://datatracker.ietf.org/doc/html/rfc8017#section-7.1
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DecryptingKey<D, MGD = D>
 where
     D: Digest,
@@ -26,6 +24,21 @@ where
     label: Option<String>,
     phantom: PhantomData<D>,
     mg_phantom: PhantomData<MGD>,
+}
+
+impl<D, MGD> Clone for DecryptingKey<D, MGD>
+where
+    D: Digest,
+    MGD: Digest + FixedOutputReset,
+{
+    fn clone(&self) -> Self {
+        DecryptingKey {
+            inner: self.inner.try_clone().expect("TODO"),
+            label: self.label.as_ref().map(|x| (*x).try_clone().expect("TODO")),
+            phantom: PhantomData,
+            mg_phantom: PhantomData,
+        }
+    }
 }
 
 impl<D, MGD> DecryptingKey<D, MGD>
@@ -47,7 +60,7 @@ where
     pub fn new_with_label<S: AsRef<str>>(key: RsaPrivateKey, label: S) -> Self {
         Self {
             inner: key,
-            label: Some(label.as_ref().to_string()),
+            label: Some(label.as_ref().try_to_string().expect("TODO")),
             phantom: Default::default(),
             mg_phantom: Default::default(),
         }
@@ -64,7 +77,7 @@ where
             None,
             &self.inner,
             ciphertext,
-            self.label.as_ref().cloned(),
+            self.label.try_clone().expect("TODO"),
         )
     }
 }
@@ -83,7 +96,7 @@ where
             Some(rng),
             &self.inner,
             ciphertext,
-            self.label.as_ref().cloned(),
+            self.label.try_clone().expect("TODO"),
         )
     }
 }

@@ -3,6 +3,7 @@ use crate::{Result, RsaPrivateKey};
 use const_oid::AssociatedOid;
 use core::marker::PhantomData;
 use digest::{Digest, FixedOutputReset};
+use fallible_vec::{TryClone, TryCloneError};
 use pkcs8::{
     spki::{
         der::AnyRef, AlgorithmIdentifierOwned, AlgorithmIdentifierRef,
@@ -26,7 +27,7 @@ use {
 /// [RFC8017 § 8.1].
 ///
 /// [RFC8017 § 8.1]: https://datatracker.ietf.org/doc/html/rfc8017#section-8.1
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct SigningKey<D>
 where
     D: Digest,
@@ -34,6 +35,19 @@ where
     inner: RsaPrivateKey,
     salt_len: usize,
     phantom: PhantomData<D>,
+}
+
+impl<D> TryClone for SigningKey<D>
+where
+    D: Digest,
+{
+    fn try_clone(&self) -> core::result::Result<Self, TryCloneError> {
+        Ok(SigningKey {
+            inner: self.inner.try_clone()?,
+            salt_len: self.salt_len,
+            phantom: PhantomData,
+        })
+    }
 }
 
 impl<D> SigningKey<D>

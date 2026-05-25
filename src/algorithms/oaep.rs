@@ -7,7 +7,7 @@ use digest::{Digest, DynDigest, FixedOutputReset};
 use rand_core::CryptoRngCore;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use zeroize::Zeroizing;
-
+use fallible_vec::{try_vec, SliceExt};
 use super::mgf::{mgf1_xor, mgf1_xor_digest};
 use crate::errors::{Error, Result};
 
@@ -28,7 +28,7 @@ fn encrypt_internal<R: CryptoRngCore + ?Sized, MGF: FnMut(&mut [u8], &mut [u8])>
         return Err(Error::MessageTooLong);
     }
 
-    let mut em = Zeroizing::new(vec![0u8; k]);
+    let mut em = Zeroizing::new(try_vec![0u8; k].expect("TODO"));
 
     let (_, payload) = em.split_at_mut(1);
     let (seed, db) = payload.split_at_mut(h_size);
@@ -151,7 +151,7 @@ pub(crate) fn oaep_decrypt(
 
     let (out, index) = res.unwrap();
 
-    Ok(out[index as usize..].to_vec())
+    Ok(out[index as usize..].try_to_vec().expect("TODO"))
 }
 
 ///Decrypts OAEP padding.
@@ -190,7 +190,7 @@ pub(crate) fn oaep_decrypt_digest<D: Digest, MGD: Digest + FixedOutputReset>(
 
     let (out, index) = res.unwrap();
 
-    Ok(out[index as usize..].to_vec())
+    Ok(out[index as usize..].try_to_vec().expect("TODO"))
 }
 
 /// Decrypts OAEP padding. It returns one or zero in valid that indicates whether the
@@ -240,7 +240,7 @@ fn decrypt_inner<MGF: FnMut(&mut [u8], &mut [u8])>(
     let valid = first_byte_is_zero & hash_are_equal & !nonzero_before_one & !looking_for_index;
 
     Ok(CtOption::new(
-        (em.to_vec(), index + 2 + (h_size * 2) as u32),
+        (em.try_to_vec().expect("TODO"), index + 2 + (h_size * 2) as u32),
         valid,
     ))
 }

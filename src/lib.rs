@@ -3,7 +3,10 @@
 #![doc = include_str!("../README.md")]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 #![warn(missing_docs)]
-
+#![feature(allocator_api)]
+#![feature(debug_closure_helpers)]
+#![feature(try_with_capacity)]
+#![deny(unused_must_use)]
 //! # Supported algorithms
 //!
 //! This crate supports several schemes described in [RFC8017]:
@@ -217,7 +220,6 @@
 #[cfg(doctest)]
 pub struct ReadmeDoctests;
 
-#[macro_use]
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;

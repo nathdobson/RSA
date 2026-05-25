@@ -3,6 +3,7 @@
 use alloc::vec::Vec;
 use num_bigint::BigUint;
 use zeroize::Zeroizing;
+use fallible_vec::try_vec;
 
 use crate::errors::{Error, Result};
 
@@ -13,7 +14,7 @@ fn left_pad(input: &[u8], padded_len: usize) -> Result<Vec<u8>> {
         return Err(Error::InvalidPadLen);
     }
 
-    let mut out = vec![0u8; padded_len];
+    let mut out = try_vec![0u8; padded_len].expect("TODO");
     out[padded_len - input.len()..].copy_from_slice(input);
     Ok(out)
 }

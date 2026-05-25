@@ -21,7 +21,7 @@ pub use self::{
 
 use alloc::{boxed::Box, vec::Vec};
 use core::fmt::{self, Debug};
-
+use fallible_vec::try_vec;
 use const_oid::{AssociatedOid, ObjectIdentifier};
 use digest::{Digest, DynDigest, FixedOutputReset};
 use num_bigint::BigUint;
@@ -60,7 +60,7 @@ impl Pss {
     pub fn new_with_salt<T: 'static + Digest + DynDigest + Send + Sync>(len: usize) -> Self {
         Self {
             blinded: false,
-            digest: Box::new(T::new()),
+            digest: Box::try_new(T::new()).expect("TODO"),
             salt_len: len,
         }
     }
@@ -78,7 +78,7 @@ impl Pss {
     ) -> Self {
         Self {
             blinded: true,
-            digest: Box::new(T::new()),
+            digest: Box::try_new(T::new()).expect("TODO"),
             salt_len: len,
         }
     }
@@ -172,7 +172,7 @@ pub(crate) fn sign<T: CryptoRngCore>(
     salt_len: usize,
     digest: &mut dyn DynDigest,
 ) -> Result<Vec<u8>> {
-    let mut salt = vec![0; salt_len];
+    let mut salt = try_vec![0; salt_len].expect("TODO");
     rng.fill_bytes(&mut salt[..]);
 
     sign_pss_with_salt(blind.then_some(rng), priv_key, hashed, &salt, digest)
@@ -185,7 +185,7 @@ pub(crate) fn sign_digest<T: CryptoRngCore + ?Sized, D: Digest + FixedOutputRese
     hashed: &[u8],
     salt_len: usize,
 ) -> Result<Vec<u8>> {
-    let mut salt = vec![0; salt_len];
+    let mut salt = try_vec![0; salt_len].expect("TODO");
     rng.fill_bytes(&mut salt[..]);
 
     sign_pss_with_salt_digest::<_, D>(blind.then_some(rng), priv_key, hashed, &salt)
